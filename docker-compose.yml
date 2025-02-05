@@ -1,0 +1,43 @@
+FROM nginx:alpine
+
+# Copy the custom Nginx config to the container
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Expose port 80
+EXPOSE 80
+
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]
+
+ubuntu@ip-172-31-22-174:~/nginx$ cat docker-compose.yml 
+version: '3'
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf  # Mount the nginx.conf from the host
+      - ./nginx/conf.d:/etc/nginx/conf.d    # Mount any additional config from conf.d folder
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+    networks:
+      - web
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+    entrypoint: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; certbot renew; done'"  # Auto renew certificates
+    networks:
+      - web
+
+networks:
+  web:
+    driver: bridge

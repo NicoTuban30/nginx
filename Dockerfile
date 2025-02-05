@@ -1,4 +1,3 @@
-# Use the official lightweight Nginx image
 FROM nginx:alpine
 
 # Copy the custom Nginx config to the container
